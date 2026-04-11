@@ -368,24 +368,47 @@ static void handle_api_mkdir(int client_sock, const char *path) {
     sceNetSend(client_sock, http_200_json, strlen(http_200_json), 0);
 }
 
-// POST /api/delete — Delete file or directory
-static void handle_api_delete(int client_sock, const char *path) {
-    // Try as file first, then as directory
-    int ret = sceIoRemove(path);
-    if (ret < 0) {
-        ret = sceIoRmdir(path);
-    }
-    if (ret < 0) {
-        char err[256];
-        snprintf(err, sizeof(err),
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: application/json\r\n"
-            "Connection: close\r\n\r\n"
-            "{\"status\":\"error\",\"code\":%d}", ret);
-        sceNetSend(client_sock, err, strlen(err), 0);
+// Recursive delete helper
+static void recursive_delete(const char *path) {
+    SceIoStat stat;
+    if (sceIoGetstat(path, &stat) < 0) return;
+
+    if (SCE_S_ISDIR(stat.st_mode)) {
+        SceUID dir = sceIoDopen(path);
+        if (dir >= 0) {
+            SceIoDirent entry;
+            memset(&entry, 0, sizeof(entry));
+            while (sceIoDread(dir, &entry) > 0) {
+                if (strcmp(entry.d_name, ".") == 0 || strcmp(entry.d_name, "..") == 0) {
+                    memset(&entry, 0, sizeof(entry));
+                    continue;
+                }
+                char child[512];
+                snprintf(child, sizeof(child), "%s/%s", path, entry.d_name);
+                recursive_delete(child);
+                memset(&entry, 0, sizeof(entry));
+            }
+            sceIoDclose(dir);
+        }
+        sceIoRmdir(path);
     } else {
-        sceNetSend(client_sock, http_200_json, strlen(http_200_json), 0);
+        sceIoRemove(path);
     }
+}
+
+// POST /api/delete — Delete file or directory (recursive)
+static void handle_api_delete(int client_sock, const char *path) {
+    // Safety: prevent deleting root mount points
+    if (strcmp(path, "ux0:") == 0 || strcmp(path, "ux0:/") == 0 ||
+        strcmp(path, "ur0:") == 0 || strcmp(path, "ur0:/") == 0 ||
+        strcmp(path, "uma0:") == 0 || strcmp(path, "uma0:/") == 0) {
+        const char *err = "HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n";
+        sceNetSend(client_sock, err, strlen(err), 0);
+        return;
+    }
+
+    recursive_delete(path);
+    sceNetSend(client_sock, http_200_json, strlen(http_200_json), 0);
 }
 
 // POST /api/upload — Upload file to specified directory

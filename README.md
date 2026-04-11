@@ -6,7 +6,7 @@
 </p>
 
 ### See it in action:
-<video src="https://github.com/ibrahim-dogan/vita-drop/blob/4d5d40889f3f82efa0bc743ab47a96236e29c65c/docs/preview.mp4" controls style="max-width: 100%; margin-bottom: 20px;"></video>
+https://github.com/user-attachments/assets/93b3c8b3-6a51-4f39-b7c1-9f56bccc91c6
 
 VitaDrop transforms your PS Vita into a wireless file server. Browse, upload, download, and manage your entire Vita filesystem from any device with a web browser — no USB cables, no FTP clients, no hassle.
 

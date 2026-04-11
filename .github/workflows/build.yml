@@ -1,0 +1,87 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: vitasdk/vitasdk:latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          apk update
+          apk add --no-cache pngquant
+
+      - name: Optimize PNG assets
+        run: |
+          pngquant --force --ext .png 256 sce_sys/icon0.png || true
+          pngquant --force --ext .png 256 sce_sys/livearea/contents/bg.png || true
+          pngquant --force --ext .png 256 sce_sys/livearea/contents/startup.png || true
+
+      - name: Build VPK
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make
+
+      - name: Upload VPK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vita_drop
+          path: build/vita_drop.vpk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Download VPK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vita_drop
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: VitaDrop ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## VitaDrop ${{ steps.get_version.outputs.VERSION }}
+            
+            ### Installation
+            1. Download `vita_drop.vpk` below
+            2. Transfer to your PS Vita
+            3. Install using VitaShell
+            4. Launch from home screen
+            
+            ### Features
+            - Wi-Fi Direct file transfer
+            - Chunked memory saving
+            - QR Code scan support for url detection
+            
+            ### Controls
+            - **START / CIRCLE**: Exit App
+          files: vita_drop.vpk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -29,6 +29,9 @@ typedef struct {
     char filename[256];
     char error_msg[256];
     volatile int files_completed;      /* total files transferred this session */
+    
+    char history[5][256];              /* Last 5 files */
+    volatile int history_count;
 } TransferStatus;
 
 /* Global transfer status (defined in server.c) */

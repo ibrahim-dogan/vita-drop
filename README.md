@@ -13,7 +13,7 @@ A Wi-Fi Direct file transfer utility for the PlayStation Vita, allowing you to e
   - Total Progress (%)
   - Transfer Rate in MB/s
   - Estimated Time Left (ETA)
-- **Zero RAM Limitation:** Designed perfectly for PS Vita's memory constraints. VitaDrop streams file data natively onto the storage disk (`ux0:/downloads/`) without buffering entire downloads in memory.
+- **Zero RAM Limitation:** Designed perfectly for PS Vita's memory constraints. VitaDrop streams file data natively onto the storage disk (`ux0:/VitaDrop/`) without buffering entire downloads in memory.
 
 ## Installation
 
@@ -27,8 +27,9 @@ A Wi-Fi Direct file transfer utility for the PlayStation Vita, allowing you to e
 1. Ensure both your PlayStation Vita and your PC or Phone are connected to the exact same Wi-Fi connection.
 2. Open *VitaDrop* on the Vita. It will block Wi-Fi sleep automatically and initialize the embedded server.
 3. On your browser, navigate to `http://vitadrop.local/` (presented on the Vita's screen) or aim your smartphone's camera at the QR code.
-4. Drag-and-drop any files into the upload box or click to select them! Your files are streamed directly into `ux0:/downloads/`.
-5. Press **START** or **CIRCLE** to cleanly shut down the server when you are done.
+4. **Drag-and-drop** any files/folders into the upload box or use the distinct buttons to recursively select entire folder directories! Your files and their nested sub-folders are streamed flawlessly and directly constructed natively into `ux0:/VitaDrop/`.
+5. Press **SQUARE** on the console to cleanly launch VitaShell so you can manually browse to your dropped files!
+6. Alternatively, press **START** or **CIRCLE** to cleanly shut down the server when you are done.
 
 ## Building
 

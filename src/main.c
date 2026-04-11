@@ -15,6 +15,8 @@
 #include <psp2/net/net.h>
 #include <psp2/sysmodule.h>
 
+#include <psp2/appmgr.h>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -276,6 +278,14 @@ int main(int argc, char *argv[]) {
             running = 0;
             break;
         }
+        
+        if (pressed & SCE_CTRL_SQUARE) {
+            sceAppMgrLaunchAppByUri(0x20000, "psgm:play?titleid=VITASHELL");
+            sceKernelExitProcess(0);
+        }
+
+        // Prevent OLED auto-dimming and network suspend
+        sceKernelPowerTick(0);
 
         fill_solid(COLOR_BG);
 
@@ -382,8 +392,20 @@ int main(int argc, char *argv[]) {
             }
 
             char session_stats[128];
-            snprintf(session_stats, sizeof(session_stats), "Total files saved to ux0:/downloads/  |  Session count: %d", g_transfer.files_completed);
+            snprintf(session_stats, sizeof(session_stats), "UX0:/VITADROP/  |  Files: %d", g_transfer.files_completed);
             draw_string(40, 500, session_stats, 2, COLOR_TEXT_D);
+
+            if (g_transfer.history_count > 0) {
+                draw_box(580, 360, 340, 100, COLOR_PANEL);
+                draw_string(600, 375, "Recent Transfers", 2, COLOR_TEXT_D);
+                for (int i = 0; i < g_transfer.history_count && i < 3; i++) {
+                    char h_str[64];
+                    strncpy(h_str, (char* volatile)g_transfer.history[i], 32);
+                    h_str[31] = '\0';
+                    if (strlen((char* volatile)g_transfer.history[i]) > 32) strcat(h_str, "...");
+                    draw_string(600, 400 + (i * 20), h_str, 2, COLOR_SUCCESS);
+                }
+            }
 
         } else {
             draw_box(40, 110, 880, 100, COLOR_PANEL);
@@ -391,6 +413,7 @@ int main(int argc, char *argv[]) {
             draw_string(60, 165, "Make sure your Wi-Fi is enabled in Vita System Settings.", 2, COLOR_TEXT_D);
         }
 
+        draw_string(SCREEN_W - 480, 500, "- Press SQUARE to Launch VitaShell", 2, COLOR_ACCENT);
         draw_string(SCREEN_W - 220, 500, "Press START to Exit", 2, COLOR_TEXT_D);
 
         swap_buffers();

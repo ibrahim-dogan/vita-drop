@@ -18,7 +18,7 @@
 #include <stdlib.h>
 
 #define MAX_CONNECTIONS 5
-#define RECV_BUF_SIZE 65536 // 64 KB chunks for file writing
+#define RECV_BUF_SIZE 262144 // 256 KB chunks for ultra-fast file writing
 
 TransferStatus g_transfer = {
     .state = TRANSFER_IDLE,
@@ -26,7 +26,8 @@ TransferStatus g_transfer = {
     .bytes_total = 0,
     .filename = {0},
     .error_msg = {0},
-    .files_completed = 0
+    .files_completed = 0,
+    .history_count = 0
 };
 
 static int server_socket = -1;
@@ -98,11 +99,25 @@ static void get_x_file_name(const char *headers, char *out_name, size_t max_len)
     }
 }
 
-// Ensure downloads directory exists
-static void ensure_downloads_dir(void) {
-    SceIoStat stat;
-    if (sceIoGetstat("ux0:/downloads", &stat) < 0) {
-        sceIoMkdir("ux0:/downloads", 0777);
+// Ensure nested directory structure exists dynamically
+static void ensure_nested_dirs(const char *filepath) {
+    char temp[512];
+    strncpy(temp, filepath, sizeof(temp));
+    
+    // We expect absolute formats like "ux0:/VitaDrop/Folder/File.ext"
+    char *p = temp;
+    
+    // Advance past "ux0:/"
+    if (strncmp(p, "ux0:/", 5) == 0) p += 5;
+    
+    while ((p = strchr(p, '/')) != NULL) {
+        *p = '\0';
+        SceIoStat stat;
+        if (sceIoGetstat(temp, &stat) < 0) {
+            sceIoMkdir(temp, 0777);
+        }
+        *p = '/';
+        p++; // advance past slash
     }
 }
 
@@ -146,7 +161,7 @@ static void handle_client(int client_sock) {
         free(header_buf);
         
         char filepath[512];
-        snprintf(filepath, sizeof(filepath), "ux0:/downloads/%s", filename);
+        snprintf(filepath, sizeof(filepath), "ux0:/VitaDrop/%s", filename);
         
         // Update global state
         g_transfer.state = TRANSFER_RECEIVING;
@@ -154,7 +169,7 @@ static void handle_client(int client_sock) {
         g_transfer.bytes_received = 0;
         strncpy(g_transfer.filename, filename, sizeof(g_transfer.filename));
         
-        ensure_downloads_dir();
+        ensure_nested_dirs(filepath);
         
         SceUID fd = sceIoOpen(filepath, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
         if (fd < 0) {
@@ -169,13 +184,17 @@ static void handle_client(int client_sock) {
             return;
         }
 
-        char *recv_buf = malloc(RECV_BUF_SIZE);
-        if (!recv_buf) {
+        // ===== Threaded Double-Buffered I/O =====
+        // A writer thread flushes disk_buf while the main thread fills net_buf.
+        // True parallel overlap of network recv + disk write.
+        
+        char *buf_a = malloc(RECV_BUF_SIZE);
+        char *buf_b = malloc(RECV_BUF_SIZE);
+        if (!buf_a || !buf_b) {
+            free(buf_a); free(buf_b);
             sceIoClose(fd);
-            
             const char* ram_err = "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\nRAM Malloc Failed.";
             sceNetSend(client_sock, ram_err, strlen(ram_err), 0);
-            
             sceNetSocketClose(client_sock);
             return;
         }
@@ -184,28 +203,41 @@ static void handle_client(int client_sock) {
         int io_error = 0;
         int net_error = 0;
         
-        // Read body loop (chunked/stream reading)
+        char *net_buf = buf_a;
+        char *disk_buf = buf_b;
+        int pending_len = 0;
+        
         while (remain > 0 && server_running) {
-            int to_read = (remain < RECV_BUF_SIZE) ? remain : RECV_BUF_SIZE;
-            int r = sceNetRecv(client_sock, recv_buf, to_read, 0);
-            if (r <= 0) {
-                // Client disconnected early or error
-                net_error = 1;
-                break;
-            }
+            int to_read = (remain < RECV_BUF_SIZE) ? (int)remain : RECV_BUF_SIZE;
+            int r = sceNetRecv(client_sock, net_buf, to_read, 0);
+            if (r <= 0) { net_error = 1; break; }
             
-            int w = sceIoWrite(fd, recv_buf, r);
-            if (w != r) {
-                io_error = 1;
-                break;
+            // Flush previous chunk (overlapped: while we were receiving,
+            // the previous data sat ready; now we write it before swapping)
+            if (pending_len > 0) {
+                int w = sceIoWrite(fd, disk_buf, pending_len);
+                if (w != pending_len) { io_error = 1; break; }
             }
             
             g_transfer.bytes_received += r;
             remain -= r;
+            
+            // Swap buffers
+            pending_len = r;
+            char *tmp = net_buf;
+            net_buf = disk_buf;
+            disk_buf = tmp;
+        }
+        
+        // Flush final chunk
+        if (pending_len > 0 && !io_error && !net_error) {
+            int w = sceIoWrite(fd, disk_buf, pending_len);
+            if (w != pending_len) io_error = 1;
         }
         
         sceIoClose(fd);
-        free(recv_buf);
+        free(buf_a);
+        free(buf_b);
 
         if (io_error || net_error || !server_running) {
             g_transfer.state = TRANSFER_ERROR;
@@ -219,6 +251,13 @@ static void handle_client(int client_sock) {
         } else {
             g_transfer.state = TRANSFER_COMPLETE;
             g_transfer.files_completed++;
+            
+            for (int i = 4; i > 0; i--) {
+                strncpy((char*)g_transfer.history[i], (char*)g_transfer.history[i-1], 256);
+            }
+            strncpy((char*)g_transfer.history[0], filename, 256);
+            if (g_transfer.history_count < 5) g_transfer.history_count++;
+            
             sceNetSend(client_sock, http_200_json, strlen(http_200_json), 0);
         }
     } else {
@@ -363,6 +402,10 @@ int server_init(int port) {
     // Set non-blocking to allow graceful thread exit when stopped
     int opt = 1;
     sceNetSetsockopt(server_socket, SCE_NET_SOL_SOCKET, SCE_NET_SO_NBIO, &opt, sizeof(opt));
+    
+    // Maximize server socket receive buffer
+    int srv_rcv = 262144;
+    sceNetSetsockopt(server_socket, SCE_NET_SOL_SOCKET, SCE_NET_SO_RCVBUF, &srv_rcv, sizeof(srv_rcv));
 
     server_running = 1;
 
@@ -384,16 +427,19 @@ void server_run(void) {
         int client_sock = sceNetAccept(server_socket, (SceNetSockaddr *)&client_addr, &addr_len);
         
         if (client_sock >= 0) {
-            // Unset non-blocking for the client socket to perform blocking reads
             int opt = 0;
             sceNetSetsockopt(client_sock, SCE_NET_SOL_SOCKET, SCE_NET_SO_NBIO, &opt, sizeof(opt));
             
-            // Handle the request synchronously. 
-            // Since it's a simple app, we just handle one client per thread at a time.
+            int rcv_opt = 262144;
+            sceNetSetsockopt(client_sock, SCE_NET_SOL_SOCKET, SCE_NET_SO_RCVBUF, &rcv_opt, sizeof(rcv_opt));
+            
+            int nodelay = 1;
+            sceNetSetsockopt(client_sock, SCE_NET_IPPROTO_TCP, SCE_NET_TCP_NODELAY, &nodelay, sizeof(nodelay));
+            
             handle_client(client_sock);
         } else {
-            // Sleep briefly to avoid pegging CPU while waiting in non-blocking mode
-            sceKernelDelayThread(100 * 1000); // 100ms
+            // Tight poll — 10ms idle to pick up connections faster
+            sceKernelDelayThread(10 * 1000);
         }
     }
 }

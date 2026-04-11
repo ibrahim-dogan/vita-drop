@@ -36,6 +36,7 @@ target_link_libraries(${PROJECT_NAME}
   SceKernelThreadMgr_stub
   SceLibKernel_stub
   SceIofilemgr_stub
+  SceAppMgr_stub
   m
   c
 )

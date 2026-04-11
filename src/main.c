@@ -271,6 +271,7 @@ int main(int argc, char *argv[]) {
     uint32_t last_time = 0;
     float current_speed = 0.0f;
     int time_left = 0;
+    int show_info = 0;
 
     while (running) {
         sceCtrlPeekBufferPositive(0, &pad, 1);
@@ -285,6 +286,10 @@ int main(int argc, char *argv[]) {
         if (pressed & SCE_CTRL_SQUARE) {
             sceAppMgrLaunchAppByUri(0x20000, "psgm:play?titleid=VITASHELL");
             sceKernelExitProcess(0);
+        }
+        
+        if (pressed & SCE_CTRL_TRIANGLE) {
+            show_info = !show_info;
         }
 
         // Prevent OLED auto-dimming and network suspend
@@ -442,7 +447,27 @@ int main(int argc, char *argv[]) {
         // ===== BOTTOM BAR (y 500-544) =====
         draw_box(0, 500, SCREEN_W, 44, COLOR_PANEL);
         draw_string(20, 516, "[SQUARE] VitaShell", 2, COLOR_ACCENT);
+        draw_string(300, 516, "[TRIANGLE] Info", 2, COLOR_ACCENT);
         draw_string(SCREEN_W - 200, 516, "[START] Exit", 2, COLOR_TEXT_D);
+
+        // ===== INFO MODAL =====
+        if (show_info) {
+            // Draw a darkened background overlay
+            // (We don't have true alpha blending in double-buffer raw, so we draw a solid panel)
+            draw_box(180, 100, 600, 300, COLOR_BG);
+            draw_box(182, 102, 596, 296, COLOR_PANEL); // Border effect
+            
+            draw_string(210, 120, "VitaDrop - Info & Credits", 3, COLOR_ACCENT);
+            
+            draw_string(210, 170, "- Connect your PC/Phone to the same Wi-Fi network", 2, COLOR_TEXT);
+            draw_string(210, 200, "- Open the URL or scan the QR Code on your browser", 2, COLOR_TEXT);
+            draw_string(210, 230, "- Upload, Download & Manage your filesystem wirelessly", 2, COLOR_TEXT);
+            
+            draw_string(210, 280, "Created by: Ibrahim Dogan", 2, COLOR_SUCCESS);
+            draw_string(210, 310, "Email: ibrahimmdogann@gmail.com", 2, COLOR_SUCCESS);
+            
+            draw_string(210, 350, "Press [TRIANGLE] to close", 2, COLOR_TEXT_D);
+        }
 
         swap_buffers();
     }

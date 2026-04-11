@@ -26,7 +26,7 @@ A Wi-Fi Direct file transfer utility for the PlayStation Vita, allowing you to e
 
 1. Ensure both your PlayStation Vita and your PC or Phone are connected to the exact same Wi-Fi connection.
 2. Open *VitaDrop* on the Vita. It will block Wi-Fi sleep automatically and initialize the embedded server.
-3. On your browser, navigate to the `http://<VITA_IP>/` URL presented on the Vita's screen, or aim your smartphone's camera at the QR code.
+3. On your browser, navigate to `http://vitadrop.local/` (presented on the Vita's screen) or aim your smartphone's camera at the QR code.
 4. Drag-and-drop any files into the upload box or click to select them! Your files are streamed directly into `ux0:/downloads/`.
 5. Press **START** or **CIRCLE** to cleanly shut down the server when you are done.
 

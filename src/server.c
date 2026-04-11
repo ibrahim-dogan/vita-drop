@@ -47,10 +47,6 @@ static const char *http_200_json =
     "\r\n"
     "{\"status\":\"success\"}";
 
-static const char *http_400 = 
-    "HTTP/1.1 400 Bad Request\r\n"
-    "Connection: close\r\n\r\n";
-
 static const char *http_404 = 
     "HTTP/1.1 404 Not Found\r\n"
     "Connection: close\r\n\r\n";

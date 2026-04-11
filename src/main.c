@@ -246,9 +246,9 @@ int main(int argc, char *argv[]) {
     char url[128] = "http://unknown";
     if (server_ok == 0) {
         if (SERVER_PORT == 80) {
-            snprintf(url, sizeof(url), "http://%s", server_get_ip());
+            snprintf(url, sizeof(url), "http://vitadrop.local");
         } else {
-            snprintf(url, sizeof(url), "http://%s:%d", server_get_ip(), SERVER_PORT);
+            snprintf(url, sizeof(url), "http://vitadrop.local:%d", SERVER_PORT);
         }
         
         server_thid = sceKernelCreateThread("VitaDropServerThread", server_thread, 

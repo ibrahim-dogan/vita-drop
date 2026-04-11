@@ -74,11 +74,14 @@ jobs:
             4. Launch from home screen
             
             ### Features
-            - Wi-Fi Direct file transfer
-            - Chunked memory saving
-            - QR Code scan support for url detection
+            - Full Web-based File Manager (Browse, Upload, Download, Delete, Mkdir)
+            - Drag & Drop recursive folder uploads
+            - High-Speed Transfer (256KB chunks, TCP_NODELAY)
+            - QR Code instant connection via browser
             
             ### Controls
+            - **TRIANGLE**: App Info & Credits
+            - **SQUARE**: Quickly jump to VitaShell
             - **START / CIRCLE**: Exit App
           files: vita_drop.vpk
           draft: false

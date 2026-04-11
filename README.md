@@ -1,5 +1,13 @@
 # VitaDrop — Wi-Fi File Manager for PS Vita
 
+<p align="center">
+  <img src="docs/vita.png" alt="Vita UI Preview" width="45%">
+  <img src="docs/pc.png" alt="PC Web UI Preview" width="45%">
+</p>
+
+### See it in action:
+<video src="docs/preview.mp4" controls style="max-width: 100%; margin-bottom: 20px;"></video>
+
 VitaDrop transforms your PS Vita into a wireless file server. Browse, upload, download, and manage your entire Vita filesystem from any device with a web browser — no USB cables, no FTP clients, no hassle.
 
 ## Features

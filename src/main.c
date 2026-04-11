@@ -292,13 +292,13 @@ int main(int argc, char *argv[]) {
         // Modern Header
         draw_box(0, 0, SCREEN_W, 60, COLOR_PANEL);
         draw_string(40, 20, "VitaDrop", 4, COLOR_ACCENT);
-        draw_string(180, 24, "Wi-Fi File Transfer", 3, COLOR_TEXT_D);
+        draw_string(180, 24, "Wi-Fi File Manager", 3, COLOR_TEXT_D);
 
         if (server_ok == 0) {
             // Instructions Area (Left Side)
             draw_string(40, 110, "1. Connect your PC/Phone to the same Wi-Fi network.", 2, COLOR_TEXT_D);
-            draw_string(40, 140, "2. Open a web browser and visit the address below,", 2, COLOR_TEXT_D);
-            draw_string(40, 170, "   or scan the QR code using your phone's camera.", 2, COLOR_TEXT_D);
+            draw_string(40, 140, "2. Open a browser and visit the URL below or", 2, COLOR_TEXT_D);
+            draw_string(40, 170, "   scan the QR code to browse your Vita files.", 2, COLOR_TEXT_D);
             
             // URL Box Card
             draw_box(40, 210, 520, 60, COLOR_PANEL);
@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
             }
 
             char session_stats[128];
-            snprintf(session_stats, sizeof(session_stats), "UX0:/VITADROP/  |  Files: %d", g_transfer.files_completed);
+            snprintf(session_stats, sizeof(session_stats), "Transfers: %d  |  File Manager Active", g_transfer.files_completed);
             draw_string(40, 500, session_stats, 2, COLOR_TEXT_D);
 
             if (g_transfer.history_count > 0) {

@@ -1,4 +1,4 @@
-# VitaDrop — Wi-Fi File Manager for PS Vita
+# VitaDrop — ChatGPT Programmed Wi-Fi File Manager for PS Vita
 
 <p align="center">
   <img src="docs/vita.png" alt="Vita UI Preview" width="45%">
@@ -75,4 +75,4 @@ The output `vita_drop.vpk` will be in the `build/` directory.
 
 ## Credits
 
-Built with [VitaSDK](https://vitasdk.org/) by Ibrahim Dogan.
+Built with [VitaSDK](https://vitasdk.org/) by Ibrahim Dogan and [ChatGPT](https://chatgpt.com).

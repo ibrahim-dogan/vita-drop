@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC-PDM-1.0
 /*
  * VitaDrop - server.h
  * HTTP Server Header for PS Vita Wi-Fi File Transfer

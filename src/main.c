@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC-PDM-1.0
 /*
  * VitaDrop - Main Application UI and Logic (Software rendering)
  * by Ibrahim Dogan

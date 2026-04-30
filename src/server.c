@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC-PDM-1.0
 /*
  * VitaDrop - server.c
  * Embedded HTTP Server with Full File Manager API

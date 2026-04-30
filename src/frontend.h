@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC-PDM-1.0
 /*
  * VitaDrop - frontend.h
  * Embedded HTML/CSS/JS — Full File Manager Interface
